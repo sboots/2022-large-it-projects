@@ -149,3 +149,14 @@ project_tables_cleaned %>%
     estimated_completion_date
     ) %>%
   write_csv("data/out/projects_merged_raw.csv")
+
+
+# Missing tables (with different numbers of columns?)
+
+project_tables_missing <- project_tables_raw %>%
+  slice(5:n()) %>%
+  filter(table_col_n != 4 & table_col_n != 5) %>%
+  filter(table_row_n != 0)
+
+# Note: the missing tables don't appear here; will add these 
+# manually from the Word doc.
