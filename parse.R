@@ -33,6 +33,10 @@ project_tables_updated %>%
   View()
 
 
+# Remove spurious entries that aren't actual projects:
+project_tables_updated <- project_tables_updated %>%
+  filter(!is.na(total_budget_raw))
+
 # TODO: Handle fiscal-year-type dates. (e.g. "2022-23", "Fiscal Year 24/25 3", "Q4 2024/25" etc.)
 
 
