@@ -29,8 +29,14 @@ project_tables_filtered <- project_tables_raw %>%
 # Some tables have a spurious empty column in between 
 # so we'll handle 4-column and 5-column entries differently
 
+# Note: these are now for comparison purposes only;
+# the map function below handles both cases and
+# uses project_tables_filtered as input.
 project_tables_4c <- project_tables_filtered %>%
   filter(table_col_n == 4)
+
+project_tables_5c <- project_tables_filtered %>%
+  filter(table_col_n == 5)
 
 # Use with a map function to rename the columns
 # This function also uses the column names to determine whether the 
@@ -41,15 +47,42 @@ rename_internal_columns <- function(df) {
   
   # Determine the language by using the first column name
   names <- names(df)
-  first_col_name = names[[1]]
   
-  output <- df %>%
-    rename(
-      description = 1,
-      summary = 2,
-      total_budget = 3,
-      estimated_completion_date = 4
-    ) %>%
+  
+  if (ncol(df) == 4) {
+    #print("4 cols")
+    first_col_name = names[[1]]
+    
+    output <- df %>%
+      rename(
+        description = 1,
+        summary = 2,
+        total_budget = 3,
+        estimated_completion_date = 4
+      ) %>%
+      mutate(
+        other_description = ""
+      )
+    
+  } else if (ncol(df) == 5) {
+    #print("5 cols")
+    first_col_name = names[[2]]
+    
+    # Typically (in all but a handful of cases) the second column is empty in 5-column tables.
+    # Will cover the other cases manually.
+    output <- df %>%
+      rename(
+        description = 1,
+        other_description = 2,
+        summary = 3,
+        total_budget = 4,
+        estimated_completion_date = 5
+      ) 
+  }
+  
+  
+  
+  output <- output %>%
     mutate(
       language = case_when(
         str_starts(!!first_col_name, "what") ~ "en",
@@ -74,20 +107,45 @@ rename_internal_columns <- function(df) {
 }
 
 # Bring in the renamed list-column table and remove the original one.
-project_tables_4c <- project_tables_4c %>% 
+project_tables_renamed <- project_tables_filtered %>% 
   mutate(
     renamed_project_table = map(project_table, rename_internal_columns)
   ) %>%
   select(! project_table)
 
 
-project_tables_4c <- project_tables_4c %>% 
+project_tables_unnested <- project_tables_renamed %>% 
   unnest(
     cols = c(renamed_project_table), 
     names_repair = "universal",
     keep_empty = TRUE
   )
 
-project_tables_4c_filtered <- project_tables_4c %>%
+project_tables_reduced <- project_tables_unnested %>%
   filter(header_row == FALSE) %>%
   filter(language != "fr")
+
+project_tables_cleaned <- project_tables_reduced %>%
+  rename(
+    total_budget_raw = total_budget,
+    estimated_completion_date_raw = estimated_completion_date
+  ) %>%
+  mutate(
+    total_budget = parse_number(total_budget_raw),
+    estimated_completion_date = parse_date(estimated_completion_date_raw)
+  ) %>%
+  select(! language) %>%
+  select(! header_row)
+
+project_tables_cleaned %>%
+  select(
+    table_id,
+    description,
+    summary,
+    other_description,
+    total_budget_raw,
+    total_budget,
+    estimated_completion_date_raw,
+    estimated_completion_date
+    ) %>%
+  write_csv("data/out/projects_merged_raw.csv")
