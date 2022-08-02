@@ -86,5 +86,22 @@ date_corrections %>%
   select(estimated_completion_date_raw, corrected_date) %>%
   write_csv(date_corrections_file)
 
+# After manually updating, bring back in the dates and merge them in together
+date_corrections <- read_csv(date_corrections_file)
+
+project_tables_merged <- project_tables %>%
+  left_join(date_corrections, by = "estimated_completion_date_raw") %>%
+  mutate(
+    estimated_completion_date = case_when(
+      is.na(estimated_completion_date) ~ corrected_date,
+      TRUE ~ estimated_completion_date
+    )
+  ) %>%
+  select(!corrected_date)
+
+project_tables_merged %>% View()
+
+project_tables_updated <- project_tables_merged
+
 # Optionally write the data back:
 project_tables_updated %>% write_csv(working_file)
