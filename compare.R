@@ -3,6 +3,7 @@
 
 library(tidyverse)
 library(janitor)
+library(lubridate)
 
 source("helpers.R")
 
@@ -109,7 +110,8 @@ merged_data_2022 <- merged_data_2022 %>%
     estimated_completion_date.x,
     estimated_completion_date_raw,
     source,
-    as_of_date.x
+    as_of_date.x,
+    original_document_order
   )
 
 merged_data_2022 <- merged_data_2022 %>%
@@ -153,6 +155,55 @@ merged_data_2022 <- merged_data_2022 %>%
   )
 
 # Export the current merged 2022 data for posterity
+
+merged_data_2022 %>%
+  sheets_description_formatting() %>%
+  export_formatted_yearly_csvs("data/source/data_2022.csv")
+
+# Add additional analysis columns
+
+merged_data_2022 <- merged_data_2022 %>%
+  mutate(
+    is_over_10M = case_when(
+      total_budget > 10000000 ~ 1,
+      TRUE ~ 0
+    ),
+    is_over_100M = case_when(
+      total_budget > 100000000 ~ 1,
+      TRUE ~ 0
+    ),
+    as_of_date_date = parse_date(as_of_date, format = "%B %d, %Y"),
+    years_remaining = round((as_of_date_date %--% estimated_completion_date) / years(1), digits = 1)
+  ) %>% 
+  select(! as_of_date_date)
+
+# Re-relocate
+merged_data_2022 <- merged_data_2022 %>%
+  rename(
+    raw_provided_date = estimated_completion_date_raw
+  ) %>%
+  relocate(
+    dept_acronym,
+    shortcode,
+    unique_id,
+    department,
+    project_name,
+    description,
+    total_budget,
+    estimated_completion_date,
+    raw_provided_date,
+    years_remaining,
+    original_document_order,
+    source,
+    as_of_date,
+    is_over_10M,
+    is_over_100M,
+  )
+
+merged_data_2022 <- merged_data_2022 %>%
+  mutate(
+    total_budget = round(total_budget)
+  )
 
 merged_data_2022 %>%
   sheets_description_formatting() %>%
