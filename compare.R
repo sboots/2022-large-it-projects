@@ -203,7 +203,8 @@ merged_data_2022 <- merged_data_2022 %>%
 merged_data_2022 <- merged_data_2022 %>%
   mutate(
     total_budget = round(total_budget)
-  )
+  ) %>%
+  filter(! is.na(shortcode))
 
 merged_data_2022 %>%
   sheets_description_formatting() %>%
