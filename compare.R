@@ -122,6 +122,14 @@ merged_data_2022 <- merged_data_2022 %>%
     as_of_date = as_of_date.x
   )
 
+merged_data_2022 <- merged_data_2022 %>% mutate(
+  dept_acronym = case_when(
+    dept_acronym == "ec" ~ "eccc",
+    dept_acronym == "isc" ~ "inac",
+    TRUE ~ dept_acronym
+  )
+)
+
 merged_data_2022 <- merged_data_2022 %>%
   mutate(
     unique_id = str_c(dept_acronym, "-", shortcode)
