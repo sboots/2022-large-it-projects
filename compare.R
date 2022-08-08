@@ -4,6 +4,8 @@
 library(tidyverse)
 library(janitor)
 
+source("helpers.R")
+
 data_2022 <- read_csv("data/out/projects_merged_raw_with_owners.csv") %>%
   rename(
     dept_acronym = owner_org,
@@ -15,14 +17,6 @@ data_2022 <- read_csv("data/out/projects_merged_raw_with_owners.csv") %>%
     original_document_order = row_number()
   )
 
-sheets_input_formatting <- function(df) {
-  df <- df %>%
-    mutate(
-      total_budget = parse_number(total_budget),
-      estimated_completion_date = parse_date(estimated_completion_date, format = "%B %d, %Y")
-    )
-  return(df)
-}
 
 data_2016 <- read_csv("data/source/data_2016.csv") %>%
   clean_names() %>%
