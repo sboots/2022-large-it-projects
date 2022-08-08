@@ -19,3 +19,12 @@ sheets_description_formatting <- function(df) {
     )
   return(df)
 }
+
+export_formatted_yearly_csvs <- function(df, filename) {
+  df %>%
+    # mutate(
+    #   estimated_completion_date = format(estimated_completion_date, "%B %d, %Y")
+    # ) %>%
+    clean_names(case = "lower_camel") %>%
+    write_csv(filename, na = "")
+}

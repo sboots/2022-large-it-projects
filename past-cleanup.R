@@ -15,11 +15,9 @@ if(menu(c("Yes", "No"), title="Update CSV files?") == 1L) {
   print("Updating CSV files")
   
   data_2016 %>%
-    clean_names(case = "lower_camel") %>%
-    write_csv("data/source/data_2016.csv", na = "")
+    export_formatted_yearly_csvs("data/source/data_2016.csv")
   data_2019 %>%
-    clean_names(case = "lower_camel") %>%
-    write_csv("data/source/data_2019.csv", na = "")
+    export_formatted_yearly_csvs("data/source/data_2019.csv")
   
   
 }
