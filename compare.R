@@ -44,3 +44,52 @@ combined_data <- combined_data %>%
   arrange(dept_acronym, project_name)
 
 combined_data %>% write_csv("data/out/combined_data_descriptions.csv", na = "")
+
+
+# Bring back in the merged data
+
+matched_data <- read_csv("data/out/combined_data_descriptions_matched.csv") %>%
+  mutate(
+    total_budget = parse_number(total_budget)
+  )
+
+# Departmental harmonizing
+
+old_count <- combined_data %>%
+  count(dept_acronym)
+
+new_count <- matched_data %>%
+  count(dept_acronym)
+
+compare_count <- old_count %>%
+  left_join(new_count, by = "dept_acronym")
+
+compare_count <- compare_count %>%
+  mutate(
+    is_different = n.x != n.y
+  )
+
+compare_count %>% filter(is_different)
+
+# Departments to fix: ECCC, INAC
+# ec to eccc and isc to inac (for consistency)
+
+combined_data <- combined_data %>% mutate(
+  dept_acronym = case_when(
+    dept_acronym == "ec" ~ "eccc",
+    dept_acronym == "isc" ~ "inac",
+    TRUE ~ dept_acronym
+  )
+)
+
+joined_data <- combined_data %>%
+  left_join(matched_data, by = c("dept_acronym", "project_name"))
+
+joined_data <- joined_data %>%
+  mutate(
+    is_updated_shortcode = shortcode.x != shortcode.y
+  )
+
+# Find updated shortcodes in previous years
+
+joined_data %>% filter(is_updated_shortcode) %>% select(dept_acronym, shortcode.x, shortcode.y, source.x, as_of_date.x) %>% arrange(source.x)
