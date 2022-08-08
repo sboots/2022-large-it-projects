@@ -65,6 +65,7 @@ consolidated_data <- combined_data %>%
   mutate(
     latest_project_name = last(project_name),
     latest_description = last(description),
+    num_of_entries = n(),
   ) %>%
   ungroup() %>%
   select(
@@ -73,7 +74,8 @@ consolidated_data <- combined_data %>%
     unique_id,
     department,
     latest_project_name,
-    latest_description
+    latest_description,
+    num_of_entries,
   ) %>%
   distinct() %>%
   arrange(dept_acronym, latest_project_name)
