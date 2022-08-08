@@ -6,8 +6,8 @@ library(janitor)
 sheets_input_formatting <- function(df) {
   df <- df %>%
     mutate(
-      total_budget = parse_number(total_budget),
-      estimated_completion_date = parse_date(estimated_completion_date, format = "%B %d, %Y")
+      #total_budget = parse_number(total_budget),
+      #estimated_completion_date = parse_date(estimated_completion_date, format = "%B %d, %Y")
     )
   return(df)
 }

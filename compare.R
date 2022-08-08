@@ -87,3 +87,65 @@ joined_data <- joined_data %>%
 # Find updated shortcodes in previous years
 
 joined_data %>% filter(is_updated_shortcode) %>% select(dept_acronym, shortcode.x, shortcode.y, source.x, as_of_date.x) %>% arrange(source.x)
+
+
+# Bring the shortcodes back into the 2022 data
+
+merged_data_2022 <- data_2022 %>%
+  left_join(matched_data, by = c("source", "original_document_order"))
+
+# Confirm that that worked
+merged_data_2022 %>%
+  select(project_name.x, project_name.y) %>%
+  View()
+
+merged_data_2022 <- merged_data_2022 %>%
+  select(
+    dept_acronym.x,
+    shortcode,
+    project_name.x,
+    description.x, 
+    total_budget.x, 
+    estimated_completion_date.x,
+    estimated_completion_date_raw,
+    source,
+    as_of_date.x
+  )
+
+merged_data_2022 <- merged_data_2022 %>%
+  rename(
+    dept_acronym = dept_acronym.x,
+    project_name = project_name.x,
+    description = description.x, 
+    total_budget = total_budget.x, 
+    estimated_completion_date = estimated_completion_date.x,
+    as_of_date = as_of_date.x
+  )
+
+merged_data_2022 <- merged_data_2022 %>%
+  mutate(
+    unique_id = str_c(dept_acronym, "-", shortcode)
+  )
+
+departments_table <- read_csv("data/source/org_reference.csv") %>%
+  rename(
+    dept_acronym = acronym_en,
+    department = name_en
+  )
+
+merged_data_2022 <- merged_data_2022 %>%
+  left_join(departments_table, by = "dept_acronym")
+
+merged_data_2022 <- merged_data_2022 %>%
+  relocate(
+    dept_acronym,
+    shortcode,
+    unique_id,
+    department
+  )
+
+# Export the current merged 2022 data for posterity
+
+merged_data_2022 %>%
+  sheets_description_formatting() %>%
+  export_formatted_yearly_csvs("data/source/data_2022.csv")
