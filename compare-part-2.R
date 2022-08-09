@@ -12,6 +12,9 @@ data_2022 <- read_csv("data/source/data_2022.csv") %>%
   clean_names() %>%
   sheets_input_formatting()
 
+as_of_date_latest <- parse_date("2022-04-25")
+as_of_year_latest <- 2022
+
 # Merge together
 combined_data <- data_2022 %>%
   bind_rows(data_2016) %>%
@@ -129,17 +132,31 @@ consolidated_data <- consolidated_data %>%
       original_estimated_completion_date_source != latest_estimated_completion_date_source ~ TRUE,
       TRUE ~ FALSE
     ),
+    estimated_status_is_latest_year = case_when(
+      latest_estimated_completion_date_source == as_of_year_latest ~ TRUE,
+      TRUE ~ FALSE
+    ),
     estimated_status = case_when(
-      estimated_status_has_comparison_years & dates_delta_year > 0 ~ "behind schedule",
-      estimated_status_has_comparison_years & dates_delta_year == 0 ~ "on schedule",
-      estimated_status_has_comparison_years & dates_delta_year < 0 ~ "ahead of schedule",
-      latest_estimated_completion_date_source == 2022 & is.na(latest_estimated_completion_date) ~ "unknown (no dates specified)",
-      latest_estimated_completion_date_source == 2022 ~ "new",
-      latest_estimated_completion_date_source != 2022 & latest_estimated_completion_date < "2022-04-25" ~ "completed",
-      TRUE ~ "unknown (past due)"
+      # For all entries
+      latest_estimated_completion_date <= as_of_date_latest & dates_delta_year > 0 ~ "completed (behind schedule)",
+      latest_estimated_completion_date <= as_of_date_latest & dates_delta_year < 0 ~ "completed (ahead of schedule)",
+      latest_estimated_completion_date <= as_of_date_latest ~ "completed",
+      
+      # For entries that are in the 2022 set
+      estimated_status_is_latest_year & latest_estimated_completion_date < as_of_date_latest ~ "completed",
+      estimated_status_is_latest_year & dates_delta_year > 0 ~ "behind schedule",
+      estimated_status_is_latest_year & dates_delta_year < 0 ~ "ahead of schedule",
+      estimated_status_is_latest_year & dates_delta_year == 0 & estimated_status_has_comparison_years ~ "on schedule",
+      estimated_status_is_latest_year & !is.na(latest_estimated_completion_date) ~ "new",
+      estimated_status_is_latest_year ~ "unknown (no dates specified)",
+      
+      # For entries that aren't in the 2022 set
+      latest_estimated_completion_date > as_of_date_latest ~ "unknown (past due)",
+      is.na(latest_estimated_completion_date) ~ "unknown (no dates specified)",
+      TRUE ~ "unknown (surprise error case)"
     )
   ) %>%
-  select(! estimated_status_has_comparison_years) %>% 
+  select(! c(estimated_status_has_comparison_years,estimated_status_is_latest_year)) %>% 
   mutate(
     is_over_10M = case_when(
       latest_budget > 10000000 ~ 1,
