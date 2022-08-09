@@ -5,11 +5,21 @@ library(janitor)
 library(lubridate)
 
 sheets_input_formatting <- function(df) {
-  df <- df %>%
-    mutate(
-      #total_budget = parse_number(total_budget),
-      #estimated_completion_date = parse_date(estimated_completion_date, format = "%B %d, %Y")
-    )
+  
+  if(is_character(df$total_budget)) {
+    df <- df %>%
+      mutate(
+        total_budget = parse_number(total_budget),
+      )
+  }
+  
+  if(is_character(df$estimated_completion_date)) {
+    df <- df %>%
+      mutate(
+        estimated_completion_date = parse_date(estimated_completion_date, format = "%B %d, %Y")
+      )
+  }
+  
   return(df)
 }
 
