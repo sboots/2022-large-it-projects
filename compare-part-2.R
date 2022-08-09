@@ -115,6 +115,7 @@ consolidated_data <- consolidated_data %>%
   arrange(dept_acronym, latest_project_name)
 
 
+# Add project comparison information
 consolidated_data <- consolidated_data %>%
   mutate(
     budget_delta = latest_budget - original_budget,
@@ -123,6 +124,35 @@ consolidated_data <- consolidated_data %>%
   mutate(
     dates_delta = round((original_estimated_completion_date %--% latest_estimated_completion_date) / years(1), digits = 2)
   ) %>%
+  mutate(
+    estimated_status_has_comparison_years = case_when(
+      original_estimated_completion_date_source != latest_estimated_completion_date_source ~ TRUE,
+      TRUE ~ FALSE
+    ),
+    estimated_status = case_when(
+      estimated_status_has_comparison_years & dates_delta > 0 ~ "behind schedule",
+      estimated_status_has_comparison_years & dates_delta == 0 ~ "on schedule",
+      estimated_status_has_comparison_years & dates_delta < 0 ~ "ahead of schedule",
+      latest_estimated_completion_date_source == 2022 & is.na(latest_estimated_completion_date) ~ "unknown (no dates specified)",
+      latest_estimated_completion_date_source == 2022 ~ "new",
+      latest_estimated_completion_date_source != 2022 & latest_estimated_completion_date < "2022-04-25" ~ "completed",
+      TRUE ~ "unknown (past due)"
+    )
+  ) %>%
+  select(! estimated_status_has_comparison_years) %>% 
+  mutate(
+    is_over_10M = case_when(
+      latest_budget > 10000000 ~ 1,
+      TRUE ~ 0
+    ),
+    is_over_100M = case_when(
+      latest_budget > 100000000 ~ 1,
+      TRUE ~ 0
+    ),
+  )
+  
+# Final cleanup before exporting
+consolidated_data <- consolidated_data %>%
   mutate(
     budget_delta_percentage = case_when(
       budget_delta == 0 ~ NA_real_,
