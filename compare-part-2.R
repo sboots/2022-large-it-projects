@@ -119,10 +119,10 @@ consolidated_data <- consolidated_data %>%
 consolidated_data <- consolidated_data %>%
   mutate(
     budget_delta = latest_budget - original_budget,
-    budget_delta_percentage = round((budget_delta / original_budget) * 100, digits = 2),
+    budget_delta_percentage = str_c(round((budget_delta / original_budget) * 100, digits = 2), "%"),
   ) %>%
   mutate(
-    dates_delta = round((original_estimated_completion_date %--% latest_estimated_completion_date) / years(1), digits = 2)
+    dates_delta_year = round((original_estimated_completion_date %--% latest_estimated_completion_date) / years(1), digits = 2)
   ) %>%
   mutate(
     estimated_status_has_comparison_years = case_when(
@@ -130,9 +130,9 @@ consolidated_data <- consolidated_data %>%
       TRUE ~ FALSE
     ),
     estimated_status = case_when(
-      estimated_status_has_comparison_years & dates_delta > 0 ~ "behind schedule",
-      estimated_status_has_comparison_years & dates_delta == 0 ~ "on schedule",
-      estimated_status_has_comparison_years & dates_delta < 0 ~ "ahead of schedule",
+      estimated_status_has_comparison_years & dates_delta_year > 0 ~ "behind schedule",
+      estimated_status_has_comparison_years & dates_delta_year == 0 ~ "on schedule",
+      estimated_status_has_comparison_years & dates_delta_year < 0 ~ "ahead of schedule",
       latest_estimated_completion_date_source == 2022 & is.na(latest_estimated_completion_date) ~ "unknown (no dates specified)",
       latest_estimated_completion_date_source == 2022 ~ "new",
       latest_estimated_completion_date_source != 2022 & latest_estimated_completion_date < "2022-04-25" ~ "completed",
@@ -155,16 +155,16 @@ consolidated_data <- consolidated_data %>%
 consolidated_data <- consolidated_data %>%
   mutate(
     budget_delta_percentage = case_when(
-      budget_delta == 0 ~ NA_real_,
+      budget_delta == 0 ~ NA_character_,
       TRUE ~ budget_delta_percentage
     ),
     budget_delta = case_when(
       budget_delta == 0 ~ NA_real_,
       TRUE ~ budget_delta
     ),
-    dates_delta = case_when(
-      dates_delta == 0 ~ NA_real_,
-      TRUE ~ dates_delta
+    dates_delta_year = case_when(
+      dates_delta_year == 0 ~ NA_real_,
+      TRUE ~ dates_delta_year
     ),
   )
 
